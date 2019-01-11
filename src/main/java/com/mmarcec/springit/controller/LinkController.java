@@ -39,7 +39,7 @@ public class LinkController {
         return linkRepository.save(link);
     }
 
-    @PutMapping("/{id}")
+    @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         linkRepository.deleteById(id);
     }
