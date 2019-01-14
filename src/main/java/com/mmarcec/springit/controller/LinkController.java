@@ -1,9 +1,12 @@
 package com.mmarcec.springit.controller;
 
+import com.mmarcec.springit.domain.Comment;
 import com.mmarcec.springit.domain.Link;
+import com.mmarcec.springit.repository.CommentRepository;
 import com.mmarcec.springit.repository.LinkRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -22,9 +25,11 @@ public class LinkController {
     private static final Logger logger = LoggerFactory.getLogger(LinkController.class);
 
     private LinkRepository linkRepository;
+    private CommentRepository commentRepository;
 
-    public LinkController(LinkRepository linkRepository) {
+    public LinkController(LinkRepository linkRepository, CommentRepository commentRepository) {
         this.linkRepository = linkRepository;
+        this.commentRepository = commentRepository;
     }
 
     // list
@@ -39,7 +44,11 @@ public class LinkController {
         Optional<Link> link = linkRepository.findById(id);
 
         if (link.isPresent()) {
-            model.addAttribute("link", link.get());
+            Link currentLink = link.get();
+            Comment commment = new Comment();
+            commment.setLink(currentLink);
+            model.addAttribute("comment", commment);
+            model.addAttribute("link", currentLink);
             model.addAttribute("success", model.containsAttribute("success"));
             return "link/view";
         } else {
@@ -68,6 +77,19 @@ public class LinkController {
                     .addFlashAttribute("success", true);
             return "redirect:/link/{id}";
         }
+    }
+
+    @Secured({"ROLE_USER"})
+    @PostMapping("/link/comments")
+    public String addComment(@Valid Comment comment, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            logger.warn("There was a problem adding a new comment.");
+        } else {
+            commentRepository.save(comment);
+            logger.info("New comment added successfully.");
+        }
+
+        return "redirect:/link/" + comment.getLink().getId();
     }
 
 }
